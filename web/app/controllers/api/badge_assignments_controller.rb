@@ -6,13 +6,17 @@ module Api
     before_action :set_badge
 
     def create
-      assignment = @badge.badge_assignments.build(assignment_params)
-      
-      if assignment.save
-        render json: assignment, status: :created
-      else
-        render json: { errors: assignment.errors.full_messages }, status: :unprocessable_entity
+      ActiveRecord::Base.transaction do
+        assignment = @badge.badge_assignments.build(assignment_params)
+        
+        if assignment.save
+          render json: assignment, status: :created
+        else
+          render json: { errors: assignment.errors.full_messages }, status: :unprocessable_entity
+        end
       end
+    rescue ActiveRecord::StatementInvalid => e
+      render json: { error: "Database error: #{e.message}" }, status: :service_unavailable
     end
 
     def destroy

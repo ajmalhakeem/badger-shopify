@@ -2,14 +2,13 @@ import {
   Page,
   Layout,
   Card,
-  Button,
   DataTable,
   Modal,
   Form,
   FormLayout,
   TextField,
   Select,
-  Stack,
+  Link
 } from "@shopify/polaris";
 import { useState, useCallback, useEffect } from "react";
 import { TitleBar } from "@shopify/app-bridge-react";
@@ -71,6 +70,35 @@ export default function BadgesIndex() {
     badge.text,
     badge.position,
     badge.active ? "Active" : "Inactive",
+    <Link
+      onClick={async () => {
+        try {
+          const result = await shopify.resourcePicker({type: 'product', multiple: true});
+          
+          // Process products sequentially instead of in parallel
+          for (const product of result) {
+            await fetch(`/api/badges/${badge.id}/badge_assignments`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                badge_assignment: {
+                  product_id: product.id.split('/').pop(),
+                  active: true
+                }
+              })
+            });
+          }
+          
+          fetchBadges(); // Refresh the badges list
+        } catch (error) {
+          console.error('Error assigning products:', error);
+        }
+      }}
+    >
+      Assign to Products
+    </Link>
   ]);
 
   return (
@@ -86,8 +114,8 @@ export default function BadgesIndex() {
         <Layout.Section>
           <Card>
             <DataTable
-              columnContentTypes={["text", "text", "text", "text"]}
-              headings={["Name", "Text", "Position", "Status"]}
+              columnContentTypes={["text", "text", "text", "text", "text"]}
+              headings={["Name", "Text", "Position", "Status", "Products"]}
               rows={rows}
             />
           </Card>

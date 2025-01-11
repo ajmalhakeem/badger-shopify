@@ -41,6 +41,15 @@ module Api
       render json: response
     end
 
+    def show
+      badge = shop.badges.includes(:badge_assignments).find(params[:id])
+      render json: badge.as_json(include: {
+        badge_assignments: {
+          only: [:id, :product_id, :active],
+        }
+      })
+    end
+
     private
 
     def badge_params
