@@ -10,7 +10,30 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_07_15_093250) do
+ActiveRecord::Schema[7.1].define(version: 2025_01_11_044913) do
+  create_table "badge_assignments", force: :cascade do |t|
+    t.integer "badge_id"
+    t.bigint "product_id", null: false
+    t.boolean "active", default: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["badge_id", "product_id"], name: "index_badge_assignments_on_badge_id_and_product_id", unique: true
+    t.index ["badge_id"], name: "index_badge_assignments_on_badge_id"
+  end
+
+  create_table "badges", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "text", null: false
+    t.string "background_color", default: "#000000"
+    t.string "text_color", default: "#FFFFFF"
+    t.string "position", default: "top-right"
+    t.boolean "active", default: true
+    t.integer "shop_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["shop_id"], name: "index_badges_on_shop_id"
+  end
+
   create_table "shops", force: :cascade do |t|
     t.string "shopify_domain", null: false
     t.string "shopify_token", null: false
@@ -31,4 +54,6 @@ ActiveRecord::Schema[7.1].define(version: 2024_07_15_093250) do
     t.index ["shopify_user_id"], name: "index_users_on_shopify_user_id", unique: true
   end
 
+  add_foreign_key "badge_assignments", "badges"
+  add_foreign_key "badges", "shops"
 end

@@ -29,4 +29,13 @@ Rails.application.routes.draw do
 
   # Any other routes will just render the react app
   match "*path" => "home#index", via: [:get, :post]
+
+  namespace :api do
+    resources :badges do
+      resources :badge_assignments, only: [:create, :destroy]
+      collection do
+        get :products, to: 'badges#products'
+      end
+    end
+  end
 end
