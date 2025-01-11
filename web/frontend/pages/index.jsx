@@ -75,10 +75,32 @@ export default function HomePage() {
     badge.active ? "Active" : "Inactive",
     badge.badge_assignments?.length > 0 ? (
       <Link
-        // url={`https://admin.shopify.com/store/${shopify.config.shop}/products/${badge.badge_assignments[0].product_id}`}
-        url={`shopify://admin/products/${badge.badge_assignments[0].product_id}`}
+        onClick={async () => {
+          try {
+            // Get product IDs as a comma-separated list for the query
+            const productIds = badge.badge_assignments
+              .map(assignment => {
+                return { id: `gid://shopify/Product/${assignment.product_id}` }
+              })
+              // .join(" OR ");
+
+              console.log(productIds)
+
+            // Open resource picker with query filter
+            const products = await shopify.resourcePicker({
+              type: 'product',
+              multiple: true,
+              // filter: {
+              //   query: `id:${productIds}`
+              // }
+              selectionIds: productIds
+            });
+          } catch (error) {
+            console.error('Error opening resource picker:', error);
+          }
+        }}
       >
-        View Product ({badge.badge_assignments.length} assigned)
+        View Assigned Products ({badge.badge_assignments.length})
       </Link>
     ) : (
       <Link
