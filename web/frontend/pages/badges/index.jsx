@@ -31,7 +31,15 @@ export default function BadgesIndex() {
 
   const fetchBadges = async () => {
     try {
-      const response = await fetch("/api/badges");
+      const response = await fetch("/api/badges", {
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       const data = await response.json();
       setBadges(data);
     } catch (error) {
