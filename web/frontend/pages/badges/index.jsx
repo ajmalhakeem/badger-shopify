@@ -12,6 +12,8 @@ import {
 } from "@shopify/polaris";
 import { useState, useCallback, useEffect } from "react";
 import { TitleBar } from "@shopify/app-bridge-react";
+import createApp from '@shopify/app-bridge';
+import {Redirect} from '@shopify/app-bridge/actions';
 
 export default function BadgesIndex() {
   const [badges, setBadges] = useState([]);
@@ -23,6 +25,10 @@ export default function BadgesIndex() {
     text_color: "#FFFFFF",
     position: "top-right",
   });
+
+  const app = createApp(config);
+
+  const redirect = Redirect.create(app);
 
   useEffect(() => {
     fetchBadges();
@@ -70,35 +76,45 @@ export default function BadgesIndex() {
     badge.text,
     badge.position,
     badge.active ? "Active" : "Inactive",
-    <Link
-      onClick={async () => {
-        try {
-          const result = await shopify.resourcePicker({type: 'product', multiple: true});
-          
-          // Process products sequentially instead of in parallel
-          for (const product of result) {
-            await fetch(`/api/badges/${badge.id}/badge_assignments`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                badge_assignment: {
-                  product_id: product.id.split('/').pop(),
-                  active: true
-                }
-              })
-            });
+    badge.badge_assignments?.length > 0 ? (
+      <Link
+        onClick={() => redirect.dispatch(
+          Redirect.Action.ADMIN_PATH,
+          `/admin/products/${badge.badge_assignments[0].product_id}`
+        )}
+      >
+        View Product ({badge.badge_assignments.length} assigned)
+      </Link>
+    ) : (
+      <Link
+        onClick={async () => {
+          try {
+            const result = await shopify.resourcePicker({type: 'product', multiple: true});
+            
+            for (const product of result) {
+              await fetch(`/api/badges/${badge.id}/badge_assignments`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  badge_assignment: {
+                    product_id: product.id.split('/').pop(),
+                    active: true
+                  }
+                })
+              });
+            }
+            
+            fetchBadges();
+          } catch (error) {
+            console.error('Error assigning products:', error);
           }
-          
-          fetchBadges(); // Refresh the badges list
-        } catch (error) {
-          console.error('Error assigning products:', error);
-        }
-      }}
-    >
-      Assign to Products
-    </Link>
+        }}
+      >
+        Assign to Products
+      </Link>
+    )
   ]);
 
   return (

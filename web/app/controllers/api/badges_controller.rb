@@ -6,7 +6,11 @@ module Api
 
     def index
       badges = shop.badges.includes(:badge_assignments)
-      render json: badges
+      render json: badges.as_json(include: {
+        badge_assignments: {
+          only: [:id, :product_id, :active]
+        }
+      })
     end
 
     def create

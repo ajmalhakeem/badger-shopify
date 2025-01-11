@@ -3,111 +3,189 @@ import {
   Page,
   Layout,
   TextContainer,
-  Image,
-  Stack,
+  DataTable,
   Link,
   Text,
+  Modal,
+  FormLayout,
+  TextField,
+  Select,
 } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
-import { useTranslation, Trans } from "react-i18next";
-import { useEffect, useState } from "react";
-
-import { trophyImage } from "../assets";
-
-import { ProductsCard } from "../components";
+import { useTranslation } from "react-i18next";
+import { useState, useEffect } from "react";
 
 export default function HomePage() {
   const { t } = useTranslation();
-  const [count, setCount] = useState(0);
+  const [badges, setBadges] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    text: "",
+    background_color: "#000000",
+    text_color: "#FFFFFF",
+    position: "top-right",
+  });
 
   useEffect(() => {
-    fetchCount();
+    fetchBadges();
   }, []);
 
-  const fetchCount = async () => {
+  const fetchBadges = async () => {
     try {
-      const response = await fetch("/api/products/count");
+      const response = await fetch("/api/badges", {
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       const data = await response.json();
-      setCount(data.count);
+      setBadges(data);
     } catch (error) {
-      console.error("Error fetching count:", error);
+      console.error("Error fetching badges:", error);
     }
   };
 
+  const handleSubmit = async () => {
+    try {
+      const response = await fetch("/api/badges", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ badge: formData }),
+      });
+      
+      if (response.ok) {
+        setIsModalOpen(false);
+        fetchBadges();
+      }
+    } catch (error) {
+      console.error("Error creating badge:", error);
+    }
+  };
+
+  const rows = badges.map((badge) => [
+    badge.name,
+    badge.text,
+    badge.position,
+    badge.active ? "Active" : "Inactive",
+    badge.badge_assignments?.length > 0 ? (
+      <Link
+        // url={`https://admin.shopify.com/store/${shopify.config.shop}/products/${badge.badge_assignments[0].product_id}`}
+        url={`shopify://admin/products/${badge.badge_assignments[0].product_id}`}
+      >
+        View Product ({badge.badge_assignments.length} assigned)
+      </Link>
+    ) : (
+      <Link
+        onClick={async () => {
+          try {
+            const result = await shopify.resourcePicker({type: 'product', multiple: true});
+            
+            for (const product of result) {
+              await fetch(`/api/badges/${badge.id}/badge_assignments`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  badge_assignment: {
+                    product_id: product.id.split('/').pop(),
+                    active: true
+                  }
+                })
+              });
+            }
+            
+            fetchBadges();
+          } catch (error) {
+            console.error('Error assigning products:', error);
+          }
+        }}
+      >
+        Assign to Products
+      </Link>
+    )
+  ]);
+
   return (
-    <Page narrowWidth>
-      <TitleBar title={t("HomePage.title")} />
+    <Page
+      title="Badges"
+      primaryAction={{
+        content: "Create Badge",
+        onAction: () => setIsModalOpen(true),
+      }}
+    >
+      <TitleBar title="Badger 🦡" />
       <Layout>
         <Layout.Section>
-          <Card sectioned>
-            <Text variant="headingLg" as="h2">
-              Count: {count}
-            </Text>
-            <Stack
-              wrap={false}
-              spacing="extraTight"
-              distribution="trailing"
-              alignment="center"
-            >
-              <Stack.Item fill>
-                <TextContainer spacing="loose">
-                  <Text as="h2" variant="headingMd">
-                    {t("HomePage.heading")}
-                  </Text>
-                  <p>
-                    <Trans
-                      i18nKey="HomePage.yourAppIsReadyToExplore"
-                      components={{
-                        PolarisLink: (
-                          <Link url="https://polaris.shopify.com/" external />
-                        ),
-                        AdminApiLink: (
-                          <Link
-                            url="https://shopify.dev/api/admin-graphql"
-                            external
-                          />
-                        ),
-                        AppBridgeLink: (
-                          <Link
-                            url="https://shopify.dev/apps/tools/app-bridge"
-                            external
-                          />
-                        ),
-                      }}
-                    />
-                  </p>
-                  <p>{t("HomePage.startPopulatingYourApp")}</p>
-                  <p>
-                    <Trans
-                      i18nKey="HomePage.learnMore"
-                      components={{
-                        ShopifyTutorialLink: (
-                          <Link
-                            url="https://shopify.dev/apps/getting-started/add-functionality"
-                            external
-                          />
-                        ),
-                      }}
-                    />
-                  </p>
-                </TextContainer>
-              </Stack.Item>
-              <Stack.Item>
-                <div style={{ padding: "0 20px" }}>
-                  <Image
-                    source={trophyImage}
-                    alt={t("HomePage.trophyAltText")}
-                    width={120}
-                  />
-                </div>
-              </Stack.Item>
-            </Stack>
+          <Card>
+            <DataTable
+              columnContentTypes={["text", "text", "text", "text", "text"]}
+              headings={["Name", "Text", "Position", "Status", "Products"]}
+              rows={rows}
+            />
           </Card>
         </Layout.Section>
-        <Layout.Section>
-          <ProductsCard />
-        </Layout.Section>
       </Layout>
+
+      <Modal
+        open={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title="Create New Badge"
+        primaryAction={{
+          content: "Create",
+          onAction: handleSubmit,
+        }}
+        secondaryActions={[
+          {
+            content: "Cancel",
+            onAction: () => setIsModalOpen(false),
+          },
+        ]}
+      >
+        <Modal.Section>
+          <FormLayout>
+            <TextField
+              label="Name"
+              value={formData.name}
+              onChange={(value) => setFormData({ ...formData, name: value })}
+            />
+            <TextField
+              label="Text"
+              value={formData.text}
+              onChange={(value) => setFormData({ ...formData, text: value })}
+            />
+            <TextField
+              label="Background Color"
+              value={formData.background_color}
+              onChange={(value) => setFormData({ ...formData, background_color: value })}
+              type="color"
+            />
+            <TextField
+              label="Text Color"
+              value={formData.text_color}
+              onChange={(value) => setFormData({ ...formData, text_color: value })}
+              type="color"
+            />
+            <Select
+              label="Position"
+              options={[
+                {label: "Top Right", value: "top-right"},
+                {label: "Top Left", value: "top-left"},
+                {label: "Bottom Right", value: "bottom-right"},
+                {label: "Bottom Left", value: "bottom-left"},
+              ]}
+              value={formData.position}
+              onChange={(value) => setFormData({ ...formData, position: value })}
+            />
+          </FormLayout>
+        </Modal.Section>
+      </Modal>
     </Page>
   );
 }
