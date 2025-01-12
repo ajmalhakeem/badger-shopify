@@ -1,6 +1,7 @@
-import { Modal, FormLayout, TextField, Select } from "@shopify/polaris";
-import { useState, useCallback, useEffect } from "react";
+import { Modal, FormLayout, TextField, Text } from "@shopify/polaris";
+import { useState, useEffect } from "react";
 import Draggable from 'react-draggable';
+import { ColorPickerPopover } from './ColorPickerPopover';
 
 export function BadgeModal({ open, onClose, onSubmit, badge = null }) {
   const [formData, setFormData] = useState({
@@ -8,7 +9,7 @@ export function BadgeModal({ open, onClose, onSubmit, badge = null }) {
     text: "Your Custom Text",
     background_color: "#000000",
     text_color: "#FFFFFF",
-    position: { x: 0, y: 0 }
+    position: { x: 290, y: -248 }
   });
   const [errors, setErrors] = useState({});
 
@@ -156,18 +157,16 @@ export function BadgeModal({ open, onClose, onSubmit, badge = null }) {
           </FormLayout.Group>
 
           <FormLayout.Group>
-            <TextField
+            <ColorPickerPopover
               label="Background Color"
-              value={formData.background_color}
+              color={formData.background_color}
               onChange={(value) => setFormData({ ...formData, background_color: value })}
-              type="color"
               error={errors.background_color}
             />
-            <TextField
+            <ColorPickerPopover
               label="Text Color"
-              value={formData.text_color}
+              color={formData.text_color}
               onChange={(value) => setFormData({ ...formData, text_color: value })}
-              type="color"
               error={errors.text_color}
             />
           </FormLayout.Group>
