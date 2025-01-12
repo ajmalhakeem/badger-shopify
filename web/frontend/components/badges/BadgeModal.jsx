@@ -5,13 +5,13 @@ import Draggable from 'react-draggable';
 export function BadgeModal({ open, onClose, onSubmit, badge = null }) {
   const [formData, setFormData] = useState({
     name: "",
-    text: "",
+    text: "Your Custom Text",
     background_color: "#000000",
     text_color: "#FFFFFF",
     position: { x: 0, y: 0 }
   });
+  const [errors, setErrors] = useState({});
 
-  // Reset form when modal opens/closes or badge changes
   useEffect(() => {
     if (badge) {
       setFormData(badge);
@@ -24,10 +24,18 @@ export function BadgeModal({ open, onClose, onSubmit, badge = null }) {
         position: { x: 290, y: -248 }
       });
     }
+    setErrors({}); // Clear errors when modal opens/closes
   }, [badge, open]);
 
-  const handleSubmit = () => {
-    onSubmit(formData);
+  const handleSubmit = async () => {
+    try {
+      const result = await onSubmit(formData);
+      if (result.errors) {
+        setErrors(result.errors);
+      }
+    } catch (error) {
+      console.error("Error submitting form:", error);
+    }
   };
 
   const handleDrag = (e, data) => {
@@ -137,11 +145,13 @@ export function BadgeModal({ open, onClose, onSubmit, badge = null }) {
               label="Display Text"
               value={formData.text}
               onChange={(value) => setFormData({ ...formData, text: value })}
+              error={errors.text}
             />
             <TextField
-              label="Label"
+              label="Label (Internal)"
               value={formData.name}
               onChange={(value) => setFormData({ ...formData, name: value })}
+              error={errors.name}
             />
           </FormLayout.Group>
 
@@ -151,12 +161,14 @@ export function BadgeModal({ open, onClose, onSubmit, badge = null }) {
               value={formData.background_color}
               onChange={(value) => setFormData({ ...formData, background_color: value })}
               type="color"
+              error={errors.background_color}
             />
             <TextField
               label="Text Color"
               value={formData.text_color}
               onChange={(value) => setFormData({ ...formData, text_color: value })}
               type="color"
+              error={errors.text_color}
             />
           </FormLayout.Group>
         </FormLayout>

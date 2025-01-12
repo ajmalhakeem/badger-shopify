@@ -19,7 +19,7 @@ module Api
       if badge.save
         render json: badge, status: :created
       else
-        render json: { errors: badge.errors.full_messages }, status: :unprocessable_entity
+        render json: { errors: badge.errors.messages }, status: :unprocessable_entity
       end
     end
 
@@ -29,7 +29,7 @@ module Api
       if badge.update(badge_params)
         render json: badge
       else
-        render json: { errors: badge.errors.full_messages }, status: :unprocessable_entity
+        render json: { errors: badge.errors.messages }, status: :unprocessable_entity
       end
     end
 

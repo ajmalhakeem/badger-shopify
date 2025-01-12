@@ -101,13 +101,19 @@ export default function HomePage() {
         body: JSON.stringify({ badge: formData }),
       });
       
+      const data = await response.json();
+      
       if (response.ok) {
         setIsModalOpen(false);
         setSelectedBadge(null);
         fetchBadges();
+        return {};
+      } else {
+        return { errors: data.errors };
       }
     } catch (error) {
       console.error("Error saving badge:", error);
+      return { errors: { base: "An unexpected error occurred" } };
     }
   };
 
