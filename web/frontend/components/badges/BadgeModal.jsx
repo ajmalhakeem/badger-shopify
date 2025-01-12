@@ -1,8 +1,8 @@
 import { Modal, FormLayout, TextField, Select } from "@shopify/polaris";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Draggable from 'react-draggable';
 
-export function BadgeModal({ open, onClose, onSubmit }) {
+export function BadgeModal({ open, onClose, onSubmit, badge = null }) {
   const [formData, setFormData] = useState({
     name: "",
     text: "",
@@ -10,6 +10,21 @@ export function BadgeModal({ open, onClose, onSubmit }) {
     text_color: "#FFFFFF",
     position: { x: 0, y: 0 }
   });
+
+  // Reset form when modal opens/closes or badge changes
+  useEffect(() => {
+    if (badge) {
+      setFormData(badge);
+    } else {
+      setFormData({
+        name: "",
+        text: "Your Custom Text",
+        background_color: "#000000",
+        text_color: "#FFFFFF",
+        position: { x: 290, y: -248 }
+      });
+    }
+  }, [badge, open]);
 
   const handleSubmit = () => {
     onSubmit(formData);
@@ -85,9 +100,9 @@ export function BadgeModal({ open, onClose, onSubmit }) {
     <Modal
       open={open}
       onClose={onClose}
-      title="Create New Badge"
+      title={badge ? "Edit Badge" : "Create Badge"}
       primaryAction={{
-        content: "Create",
+        content: badge ? "Update" : "Create",
         onAction: handleSubmit,
       }}
       secondaryActions={[
@@ -117,28 +132,33 @@ export function BadgeModal({ open, onClose, onSubmit }) {
         </div>
 
         <FormLayout>
-          <TextField
-            label="Name"
-            value={formData.name}
-            onChange={(value) => setFormData({ ...formData, name: value })}
-          />
-          <TextField
-            label="Text"
-            value={formData.text}
-            onChange={(value) => setFormData({ ...formData, text: value })}
-          />
-          <TextField
-            label="Background Color"
-            value={formData.background_color}
-            onChange={(value) => setFormData({ ...formData, background_color: value })}
-            type="color"
-          />
-          <TextField
-            label="Text Color"
-            value={formData.text_color}
-            onChange={(value) => setFormData({ ...formData, text_color: value })}
-            type="color"
-          />
+          <FormLayout.Group>
+            <TextField
+              label="Display Text"
+              value={formData.text}
+              onChange={(value) => setFormData({ ...formData, text: value })}
+            />
+            <TextField
+              label="Label"
+              value={formData.name}
+              onChange={(value) => setFormData({ ...formData, name: value })}
+            />
+          </FormLayout.Group>
+
+          <FormLayout.Group>
+            <TextField
+              label="Background Color"
+              value={formData.background_color}
+              onChange={(value) => setFormData({ ...formData, background_color: value })}
+              type="color"
+            />
+            <TextField
+              label="Text Color"
+              value={formData.text_color}
+              onChange={(value) => setFormData({ ...formData, text_color: value })}
+              type="color"
+            />
+          </FormLayout.Group>
         </FormLayout>
       </Modal.Section>
     </Modal>

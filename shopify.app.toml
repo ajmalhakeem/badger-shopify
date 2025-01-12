@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "0fe7f09aff0777d307d7e2c5a7394ebe"
-application_url = "https://built-signing-mouse-cardiac.trycloudflare.com"
+application_url = "https://senegal-o-lover-prints.trycloudflare.com"
 embedded = true
 name = "badger"
 handle = "badger-1"
@@ -35,9 +35,9 @@ scopes = "write_products"
 
 [auth]
 redirect_urls = [
-  "https://built-signing-mouse-cardiac.trycloudflare.com/auth/callback",
-  "https://built-signing-mouse-cardiac.trycloudflare.com/auth/shopify/callback",
-  "https://built-signing-mouse-cardiac.trycloudflare.com/api/auth/callback"
+  "https://senegal-o-lover-prints.trycloudflare.com/auth/callback",
+  "https://senegal-o-lover-prints.trycloudflare.com/auth/shopify/callback",
+  "https://senegal-o-lover-prints.trycloudflare.com/api/auth/callback"
 ]
 
 [pos]

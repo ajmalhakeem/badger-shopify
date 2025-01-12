@@ -1,23 +1,71 @@
 import {
-  Card,
   Page,
   Layout,
-  DataTable,
-  Link,
 } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
 import { useTranslation } from "react-i18next";
 import { useState, useEffect } from "react";
 import { BadgeModal } from "../components/badges/BadgeModal";
+import { BadgeTable } from "../components/badges/BadgeTable";
 
 export default function HomePage() {
   const { t } = useTranslation();
   const [badges, setBadges] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedBadge, setSelectedBadge] = useState(null);
 
   useEffect(() => {
     fetchBadges();
   }, []);
+
+  const handleEdit = (badge) => {
+    setSelectedBadge(badge);
+    setIsModalOpen(true);
+  };
+
+  const handleAssignProducts = async (e, badge) => {
+    e.stopPropagation();
+    try {
+      const result = await shopify.resourcePicker({type: 'product', multiple: true});
+      
+      for (const product of result) {
+        await fetch(`/api/badges/${badge.id}/badge_assignments`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            badge_assignment: {
+              product_id: product.id.split('/').pop(),
+              active: true
+            }
+          })
+        });
+      }
+      
+      fetchBadges();
+    } catch (error) {
+      console.error('Error assigning products:', error);
+    }
+  };
+
+  const handleViewProducts = async (e, badge) => {
+    e.stopPropagation();
+    const productIds = badge.badge_assignments
+      .map(assignment => {
+        return { id: `gid://shopify/Product/${assignment.product_id}` }
+      });
+
+    try {
+      await shopify.resourcePicker({
+        type: 'product',
+        multiple: true,
+        selectionIds: productIds
+      });
+    } catch (error) {
+      console.error('Error opening resource picker:', error);
+    }
+  };
 
   const fetchBadges = async () => {
     try {
@@ -39,8 +87,14 @@ export default function HomePage() {
 
   const handleSubmit = async (formData) => {
     try {
-      const response = await fetch("/api/badges", {
-        method: "POST",
+      const url = selectedBadge 
+        ? `/api/badges/${selectedBadge.id}`
+        : "/api/badges";
+        
+      const method = selectedBadge ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method,
         headers: {
           "Content-Type": "application/json",
         },
@@ -49,77 +103,13 @@ export default function HomePage() {
       
       if (response.ok) {
         setIsModalOpen(false);
+        setSelectedBadge(null);
         fetchBadges();
       }
     } catch (error) {
-      console.error("Error creating badge:", error);
+      console.error("Error saving badge:", error);
     }
   };
-
-  const rows = badges.map((badge) => [
-    badge.name,
-    badge.text,
-    badge.active ? "Active" : "Inactive",
-    badge.badge_assignments?.length > 0 ? (
-      <Link
-        onClick={async () => {
-          try {
-            // Get product IDs as a comma-separated list for the query
-            const productIds = badge.badge_assignments
-              .map(assignment => {
-                return { id: `gid://shopify/Product/${assignment.product_id}` }
-              })
-              // .join(" OR ");
-
-              console.log(productIds)
-
-            // Open resource picker with query filter
-            const products = await shopify.resourcePicker({
-              type: 'product',
-              multiple: true,
-              // filter: {
-              //   query: `id:${productIds}`
-              // }
-              selectionIds: productIds
-            });
-          } catch (error) {
-            console.error('Error opening resource picker:', error);
-          }
-        }}
-      >
-        View Assigned Products ({badge.badge_assignments.length})
-      </Link>
-    ) : (
-      <Link
-        onClick={async () => {
-          try {
-            const result = await shopify.resourcePicker({type: 'product', multiple: true});
-            
-            for (const product of result) {
-              await fetch(`/api/badges/${badge.id}/badge_assignments`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  badge_assignment: {
-                    product_id: product.id.split('/').pop(),
-                    active: true
-                  }
-                })
-              });
-            }
-            
-            fetchBadges();
-          } catch (error) {
-            console.error('Error assigning products:', error);
-          }
-        }}
-      >
-        Assign to Products
-      </Link>
-    )
-  ]);
 
   return (
     <Page
@@ -132,20 +122,23 @@ export default function HomePage() {
       <TitleBar title="Badger 🦡" />
       <Layout>
         <Layout.Section>
-          <Card>
-            <DataTable
-              columnContentTypes={["text", "text", "text", "text"]}
-              headings={["Name", "Text", "Status", "Products"]}
-              rows={rows}
-            />
-          </Card>
+          <BadgeTable
+            badges={badges}
+            onEdit={handleEdit}
+            onAssignProducts={handleAssignProducts}
+            onViewProducts={handleViewProducts}
+          />
         </Layout.Section>
       </Layout>
 
       <BadgeModal 
         open={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedBadge(null);
+        }}
         onSubmit={handleSubmit}
+        badge={selectedBadge}
       />
     </Page>
   );
