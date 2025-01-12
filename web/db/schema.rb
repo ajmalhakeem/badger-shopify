@@ -26,7 +26,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_01_11_044913) do
     t.string "text", null: false
     t.string "background_color", default: "#000000"
     t.string "text_color", default: "#FFFFFF"
-    t.string "position", default: "top-right"
+    t.json "position", default: {"x"=>0, "y"=>0}
     t.boolean "active", default: true
     t.integer "shop_id"
     t.datetime "created_at", null: false
