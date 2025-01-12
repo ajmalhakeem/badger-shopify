@@ -57,7 +57,13 @@ module Api
     private
 
     def badge_params
-      params.require(:badge).permit(:name, :text, :background_color, :text_color, :position, :active)
+      params.require(:badge).permit(
+        :name, 
+        :text, 
+        :background_color, 
+        :text_color, 
+        position: [:x, :y]
+      )
     end
 
     def shop
