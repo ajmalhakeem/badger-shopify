@@ -8,6 +8,9 @@ class HomeController < ApplicationController
   DEV_INDEX_PATH = Rails.root.join("frontend")
   PROD_INDEX_PATH = Rails.public_path.join("dist")
 
+  #TODO: Remove this after figure out how to use CSRF protection
+  skip_before_action :verify_authenticity_token
+
   def index
     if ShopifyAPI::Context.embedded? && (!params[:embedded].present? || params[:embedded] != "1")
       redirect_to(ShopifyAPI::Auth.embedded_app_url(params[:host]), allow_other_host: true)

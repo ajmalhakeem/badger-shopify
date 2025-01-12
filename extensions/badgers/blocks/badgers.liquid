@@ -1,0 +1,24 @@
+<div class="hello-world-badge">{{ product.title }}</div>
+
+<style>
+  .hello-world-badge {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 14px;
+    z-index: 100;
+  }
+</style>
+
+{% schema %}
+{
+  "name": "Product Badge",
+  "target": "body",
+  "settings": [],
+  "javascript": "script.js"
+}
+{% endschema %}

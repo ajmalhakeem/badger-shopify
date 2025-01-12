@@ -1,113 +1,151 @@
 import {
-  Card,
   Page,
   Layout,
-  TextContainer,
-  Image,
-  Stack,
-  Link,
-  Text,
 } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
-import { useTranslation, Trans } from "react-i18next";
-import { useEffect, useState } from "react";
-
-import { trophyImage } from "../assets";
-
-import { ProductsCard } from "../components";
+import { useTranslation } from "react-i18next";
+import { useState, useEffect } from "react";
+import { BadgeModal } from "../components/badges/BadgeModal";
+import { BadgeTable } from "../components/badges/BadgeTable";
 
 export default function HomePage() {
   const { t } = useTranslation();
-  const [count, setCount] = useState(0);
+  const [badges, setBadges] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedBadge, setSelectedBadge] = useState(null);
 
   useEffect(() => {
-    fetchCount();
+    fetchBadges();
   }, []);
 
-  const fetchCount = async () => {
+  const handleEdit = (badge) => {
+    setSelectedBadge(badge);
+    setIsModalOpen(true);
+  };
+
+  const handleAssignProducts = async (e, badge) => {
+    e.stopPropagation();
     try {
-      const response = await fetch("/api/products/count");
-      const data = await response.json();
-      setCount(data.count);
+      const result = await shopify.resourcePicker({type: 'product', multiple: true});
+      
+      for (const product of result) {
+        await fetch(`/api/badges/${badge.id}/badge_assignments`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            badge_assignment: {
+              product_id: product.id.split('/').pop(),
+              active: true
+            }
+          })
+        });
+      }
+      
+      fetchBadges();
     } catch (error) {
-      console.error("Error fetching count:", error);
+      console.error('Error assigning products:', error);
+    }
+  };
+
+  const handleViewProducts = async (e, badge) => {
+    e.stopPropagation();
+    const productIds = badge.badge_assignments
+      .map(assignment => {
+        return { id: `gid://shopify/Product/${assignment.product_id}` }
+      });
+
+    try {
+      await shopify.resourcePicker({
+        type: 'product',
+        multiple: true,
+        selectionIds: productIds
+      });
+    } catch (error) {
+      console.error('Error opening resource picker:', error);
+    }
+  };
+
+  const fetchBadges = async () => {
+    try {
+      const response = await fetch("/api/badges", {
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      setBadges(data);
+    } catch (error) {
+      console.error("Error fetching badges:", error);
+    }
+  };
+
+  const handleSubmit = async (formData) => {
+    try {
+      const url = selectedBadge 
+        ? `/api/badges/${selectedBadge.id}`
+        : "/api/badges";
+        
+      const method = selectedBadge ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ badge: formData }),
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        setIsModalOpen(false);
+        setSelectedBadge(null);
+        fetchBadges();
+        return {};
+      } else {
+        return { errors: data.errors };
+      }
+    } catch (error) {
+      console.error("Error saving badge:", error);
+      return { errors: { base: "An unexpected error occurred" } };
     }
   };
 
   return (
-    <Page narrowWidth>
-      <TitleBar title={t("HomePage.title")} />
+    <Page
+      title="Badges"
+      primaryAction={{
+        content: "Create Badge",
+        onAction: () => setIsModalOpen(true),
+      }}
+    >
+      <TitleBar title="Badger 🦡" />
       <Layout>
         <Layout.Section>
-          <Card sectioned>
-            <Text variant="headingLg" as="h2">
-              Count: {count}
-            </Text>
-            <Stack
-              wrap={false}
-              spacing="extraTight"
-              distribution="trailing"
-              alignment="center"
-            >
-              <Stack.Item fill>
-                <TextContainer spacing="loose">
-                  <Text as="h2" variant="headingMd">
-                    {t("HomePage.heading")}
-                  </Text>
-                  <p>
-                    <Trans
-                      i18nKey="HomePage.yourAppIsReadyToExplore"
-                      components={{
-                        PolarisLink: (
-                          <Link url="https://polaris.shopify.com/" external />
-                        ),
-                        AdminApiLink: (
-                          <Link
-                            url="https://shopify.dev/api/admin-graphql"
-                            external
-                          />
-                        ),
-                        AppBridgeLink: (
-                          <Link
-                            url="https://shopify.dev/apps/tools/app-bridge"
-                            external
-                          />
-                        ),
-                      }}
-                    />
-                  </p>
-                  <p>{t("HomePage.startPopulatingYourApp")}</p>
-                  <p>
-                    <Trans
-                      i18nKey="HomePage.learnMore"
-                      components={{
-                        ShopifyTutorialLink: (
-                          <Link
-                            url="https://shopify.dev/apps/getting-started/add-functionality"
-                            external
-                          />
-                        ),
-                      }}
-                    />
-                  </p>
-                </TextContainer>
-              </Stack.Item>
-              <Stack.Item>
-                <div style={{ padding: "0 20px" }}>
-                  <Image
-                    source={trophyImage}
-                    alt={t("HomePage.trophyAltText")}
-                    width={120}
-                  />
-                </div>
-              </Stack.Item>
-            </Stack>
-          </Card>
-        </Layout.Section>
-        <Layout.Section>
-          <ProductsCard />
+          <BadgeTable
+            badges={badges}
+            onEdit={handleEdit}
+            onAssignProducts={handleAssignProducts}
+            onViewProducts={handleViewProducts}
+          />
         </Layout.Section>
       </Layout>
+
+      <BadgeModal 
+        open={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedBadge(null);
+        }}
+        onSubmit={handleSubmit}
+        badge={selectedBadge}
+      />
     </Page>
   );
 }

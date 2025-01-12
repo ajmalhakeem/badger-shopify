@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "0fe7f09aff0777d307d7e2c5a7394ebe"
-application_url = "https://way-healing-tabs-pet.trycloudflare.com"
+application_url = "https://uses-norman-various-literally.trycloudflare.com"
 embedded = true
 name = "badger"
 handle = "badger-1"
@@ -35,9 +35,9 @@ scopes = "write_products"
 
 [auth]
 redirect_urls = [
-  "https://way-healing-tabs-pet.trycloudflare.com/auth/callback",
-  "https://way-healing-tabs-pet.trycloudflare.com/auth/shopify/callback",
-  "https://way-healing-tabs-pet.trycloudflare.com/api/auth/callback"
+  "https://uses-norman-various-literally.trycloudflare.com/auth/callback",
+  "https://uses-norman-various-literally.trycloudflare.com/auth/shopify/callback",
+  "https://uses-norman-various-literally.trycloudflare.com/api/auth/callback"
 ]
 
 [pos]
@@ -46,3 +46,4 @@ embedded = false
 [build]
 dev_store_url = "hakeems-sticker-store.myshopify.com"
 automatically_update_urls_on_dev = true
+include_config_on_deploy = true
